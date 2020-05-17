@@ -1,6 +1,7 @@
 package com.apnishop.web;
 
 
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -38,6 +39,8 @@ public class Application extends SpringBootServletInitializer {
         for (String beanName : beanNames) {
             System.out.println(beanName);
         }
-    }*/
+    }
+    //samples
+    */
 
 }
