@@ -5,14 +5,16 @@ import java.util.HashMap;
 
 public class ResponseTransfer {
 	private String code;
-	private Object msg;
+	private String msg;
+	private Object resObj;
 	private HashMap<String,String> srverr;
 
 	
-	public ResponseTransfer(String code, Object msg, HashMap<String, String> srverr) {
+	public ResponseTransfer(String code, String msg, Object resObj, HashMap<String, String> srverr) {
 		super();
 		this.code = code;
 		this.msg = msg;
+		this.resObj = resObj;
 		this.srverr = srverr;
 	}
 
@@ -24,12 +26,20 @@ public class ResponseTransfer {
 		this.code = code;
 	}
 
-	public Object getMsg() {
+	public String getMsg() {
 		return msg;
 	}
 
-	public void setMsg(Object msg) {
+	public void setMsg(String msg) {
 		this.msg = msg;
+	}
+
+	public Object getResObj() {
+		return resObj;
+	}
+
+	public void setResObj(Object resObj) {
+		this.resObj = resObj;
 	}
 
 	public HashMap<String, String> getSrverr() {

@@ -15,10 +15,15 @@ public interface UserDAO extends CrudRepository<User, Long>{
 	@Modifying
 	public void updateUser(String type,String role,int userid);
 	
-	@Query("UPDATE User SET username=?1,email=?2,languageid=?3 where id=?4")
+	@Query("UPDATE User SET username=?1,email=?2,languageid=?3 where userguid=?4")
 	@Modifying
-	public void updateUserProfile(String username,String email,int langid,int userid);
+	public void updateUserProfile(String username,String email,int langid,String userguid);
+	
+	
+	@Query("SELECT max(userguid) from User")
+	public String getMaxUserGUId();
 	
 	public User findByUsermobileno(String mob);
+	public User findByUserguid(String guid);
 
 }

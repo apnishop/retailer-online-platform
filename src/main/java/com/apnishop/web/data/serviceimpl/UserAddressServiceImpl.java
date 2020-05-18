@@ -16,6 +16,8 @@ import com.apnishop.web.service.StateService;
 import com.apnishop.web.service.UserAddressService;
 import com.apnishop.web.service.UserService;
 
+import ch.qos.logback.classic.Logger;
+
 @Service
 public class UserAddressServiceImpl implements UserAddressService{
 
@@ -36,18 +38,24 @@ public class UserAddressServiceImpl implements UserAddressService{
 	
 	@Override
 	@Transactional
-	public void updateUserAddress(User uObj, Address addrObj,String lang,String state, String country) {
-		State sObj=stateservice.findbyStateName(state);
-		Language lObj=langservice.findbyLangName(lang);
-		System.out.print(country);
-		Country cObj=ctservice.findbyCtName(country);
-		System.out.print(country);
-		uObj.setLanguageid(lObj.getId());
-		addrObj.setCountryid(cObj.getId());
-		addrObj.setStateprovinceid(sObj.getId());
-		System.out.print(country);
-		userservice.updateUserProfile(uObj.getUsername(), uObj.getEmail(),uObj.getLanguageid(), uObj.getId());
+	public void updateUserAddress(User uObj, Address addrObj,int ct) {
+		if(ct==0)
+		{//only 1 address in the request
+			
+		userservice.updateUserProfile(uObj.getUsername(), uObj.getEmail(),uObj.getLanguageid(), uObj.getUserguid());
 		addrservice.addAddress(addrObj);
+		}
+		else if(ct==-1)
+		{//if there is no address in the request
+			
+			userservice.updateUserProfile(uObj.getUsername(), uObj.getEmail(),uObj.getLanguageid(), uObj.getUserguid());
+			
+		}
+		else{// more than 1 address present
+			
+			addrservice.addAddress(addrObj);
+		}
+		
 		
 	}
 

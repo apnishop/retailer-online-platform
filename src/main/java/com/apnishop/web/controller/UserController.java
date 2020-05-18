@@ -1,6 +1,7 @@
 package com.apnishop.web.controller;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,9 +40,9 @@ import com.apnishop.web.data.entity.UserRegisterModel;
 import com.apnishop.web.data.entity.UserRetailerMapping;
 import com.apnishop.web.dto.AddressDTO;
 import com.apnishop.web.dto.RetailerDTO;
+import com.apnishop.web.dto.UserAddressDTO;
 import com.apnishop.web.dto.UserDTO;
 import com.apnishop.web.dto.UserLeadDTO;
-import com.apnishop.web.dto.UserMapper;
 import com.apnishop.web.dto.UserRetailerDTO;
 import com.apnishop.web.service.RetailerService;
 import com.apnishop.web.service.UserAddressService;
@@ -50,6 +51,7 @@ import com.apnishop.web.service.UserRetailerService;
 import com.apnishop.web.service.UserService;
 import com.apnishop.web.util.Constant;
 import com.apnishop.web.util.ResponseCodes;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -95,30 +97,35 @@ public class UserController {
 	 @PostMapping("/register/lead")
 	 @Consumes(MediaType.APPLICATION_JSON)
 	 @ResponseBody
-	 public ResponseTransfer registerLeadUser(@RequestBody String mobno) throws RuntimeException	
+	 public ResponseTransfer registerLeadUser(@RequestBody String reqObj) throws RuntimeException	
 		 {
 		 try{
 		
-			 logger.info("in register func");
+			 logger.debug("Lead resgistration");
+			 JsonParser jsonparser = new JsonParser();
+			 JsonElement jsontree = jsonparser.parse(reqObj);
+			 JsonObject obj = jsontree.getAsJsonObject();
+			 String mobno=obj.get("mobno").getAsString();
 			 if(userservice.getUserByMobNo(mobno)==null){
-				 logger.info("new user");
+				 logger.debug("new user");
 				 UserLeadDTO userdto = new UserLeadDTO();
 				 userdto.setUsermobileno(mobno);
 				 userdto.setUsertype(Constant.USER_TYPE_LEAD);
 				 userdto.setCreatedonutc(new Timestamp(System.currentTimeMillis()));
 				 userdto.setLastactivitydateutc(new Timestamp(System.currentTimeMillis()));
-				 userdto.setUserguid("xx01");
+				 int guid=Integer.parseInt(userservice.getMaxGUId())+1;
+				 userdto.setUserguid(String.valueOf(guid));
 								 
 				 userservice.addUser(modelMapper.map(userdto, User.class));
-				 return new ResponseTransfer(ResponseCodes.Code_2001,userdto,null);
+				 return new ResponseTransfer(Constant.SUCCESS_USER_CODE,ResponseCodes.Code_2001,userdto,null);
 			
 			 }
 		 
 			 else{
-				 logger.info("existing user");
+				 logger.debug("existing user");
 				 HashMap<String,String> errdesc= new HashMap<String, String>();
 				 errdesc.put(Constant.SUCCESS_USER_EXIST_CODE, ResponseCodes.Code_4001);
-				 return new ResponseTransfer(ResponseCodes.Code_4001,null,errdesc);
+				 return new ResponseTransfer(Constant.SUCCESS_USER_EXIST_CODE,ResponseCodes.Code_4001,null,errdesc);
 			 }
 		 }
 		 catch(Exception ex)
@@ -126,7 +133,7 @@ public class UserController {
 			 logger.error("Exception::"+ex);
 			 HashMap<String,String> errdesc= new HashMap<String, String>();
 			 errdesc.put(Constant.TECHNICAL_ERROR_CODE, ResponseCodes.Code_5001);
-			 return new ResponseTransfer(ResponseCodes.Code_5001,null,errdesc); 
+			 return new ResponseTransfer(Constant.TECHNICAL_ERROR_CODE,ResponseCodes.Code_5001,null,errdesc); 
 		 }
 		 
 		 
@@ -153,7 +160,7 @@ public class UserController {
 			 JsonElement jsontree = jsonparser.parse(UserRetObj);
 			 JsonObject retObj = jsontree.getAsJsonObject();
 			 UserRetailerMapping rObj= new UserRetailerMapping();
-			 Retailer storeobj =retservice.getByStorename(retObj.get("retailershortname").getAsString());
+			 Retailer storeobj =retservice.getByStoreId(retObj.get("storeid").getAsString());
 			 if(retObj.get("role").getAsString().equalsIgnoreCase(Constant.USER_ROLE_CUSTOMER))
 			 {
 					 if(storeobj!=null){
@@ -162,16 +169,16 @@ public class UserController {
 						 UserDTO user= new UserDTO();
 						 user.setUsertype(Constant.USER_TYPE_ACTIVE);
 						 user.setUserrole(Constant.USER_ROLE_CUSTOMER);
-						user.setId(Integer.parseInt(retObj.get("userid").toString()));
+						user.setUserguid(retObj.get("userid").toString());
 						 UserRetailerDTO userdto = new UserRetailerDTO();
 						 
-						 userdto.setRetailerid(storeobj.getId());						 
-						 userdto.setUserid(Integer.parseInt(retObj.get("userid").toString()));
-						 userdto.setDisplayorder(Integer.parseInt(retObj.get("displayorder").toString()));
+						 userdto.setRetailerid(Integer.parseInt(storeobj.getStoreid()));						 
+						// userdto.setUserid(Integer.parseInt(retObj.get("userid").toString()));
+						 userdto.setDisplayorder(-1);
 						// userretservice.addUserRet(modelMapper.map(userdto, UserRetailerMapping.class));
 						userRetservice.updateUserRetailer_Customer(modelMapper.map(user, User.class), modelMapper.map(userdto, UserRetailerMapping.class));
 						 
-						 return new ResponseTransfer(ResponseCodes.Code_2001,userdto,null);
+						 return new ResponseTransfer(Constant.SUCCESS_USER_CODE,ResponseCodes.Code_2001,userdto,null);
 							
 					 }
 					 
@@ -180,26 +187,26 @@ public class UserController {
 						 userservice.updateUser(Constant.USER_TYPE_ACTIVE,Constant.USER_ROLE_CUSTOMER,Integer.parseInt(retObj.get("userid").toString()));
 						 /*HashMap<String,String> errdesc= new HashMap<String, String>();
 						 errdesc.put(Constant.SUCCESS_USER_EXIST_CODE, ResponseCodes.Code_4001);*/
-						 return new ResponseTransfer(ResponseCodes.Code_4001,null,null);
+						 return new ResponseTransfer(Constant.SUCCESS_USER_EXIST_CODE,ResponseCodes.Code_4001,null,null);
 					 }
 			 }
 			 else if(retObj.get("role").getAsString().equalsIgnoreCase(Constant.USER_ROLE_RETAILER)){
 				
 					 Random rand = new Random();
 					 int rand_no = rand.nextInt(999999);
-					 userservice.updateUser(Constant.USER_TYPE_LEAD,Constant.USER_ROLE_RETAILER,Integer.parseInt(retObj.get("userid").toString()));
+					// userservice.updateUser(Constant.USER_TYPE_LEAD,Constant.USER_ROLE_RETAILER,Integer.parseInt(retObj.get("userid").toString()));
 					 UserDTO user= new UserDTO();
 					 user.setUsertype(Constant.USER_TYPE_LEAD);
 					 user.setUserrole(Constant.USER_ROLE_RETAILER);
-					 user.setId(Integer.parseInt(retObj.get("userid").toString()));
+					 user.setUserguid(retObj.get("userid").toString());
 					
 					 RetailerDTO retailerdto = new RetailerDTO();
-					 retailerdto.setStorename(retObj.get("retailershortname").getAsString());
+					 retailerdto.setStorename(retObj.get("storename").getAsString());
 					 retailerdto.setStoreid(String.format("%06d",rand_no));
 					// retservice.addRetailer(modelMapper.map(retailerdto, Retailer.class));
 					 userRetservice.updateUserRetailer_Retailer(modelMapper.map(user, User.class), modelMapper.map(retailerdto, Retailer.class));
 						 
-					 return new ResponseTransfer(ResponseCodes.Code_2001,retailerdto,null);
+					 return new ResponseTransfer(Constant.SUCCESS_USER_CODE,ResponseCodes.Code_2001,retailerdto,null);
 						
 				
 			 }
@@ -207,7 +214,7 @@ public class UserController {
 			 {
 				 HashMap<String,String> errdesc= new HashMap<String, String>();
 				 errdesc.put(Constant.NO_ROLE_ERROR_CODE, ResponseCodes.Code_5002);
-				 return new ResponseTransfer(ResponseCodes.Code_5002,null,errdesc);
+				 return new ResponseTransfer(Constant.NO_ROLE_ERROR_CODE,ResponseCodes.Code_5002,null,errdesc);
 			 }
 				
 		}
@@ -215,7 +222,7 @@ public class UserController {
 			 logger.error("Exception::"+ex);
 			 HashMap<String,String> errdesc= new HashMap<String, String>();
 			 errdesc.put(Constant.TECHNICAL_ERROR_CODE, ResponseCodes.Code_5001);
-			 return new ResponseTransfer(ResponseCodes.Code_5001,null,errdesc); 
+			 return new ResponseTransfer(Constant.TECHNICAL_ERROR_CODE,ResponseCodes.Code_5001,null,errdesc); 
 	     }	
 	   }
 	 
@@ -229,31 +236,57 @@ public class UserController {
 	 public ResponseTransfer userProfile(@RequestBody String profile,@RequestHeader Map<String,String> header) throws RuntimeException
 	 {
 		 try{
-			 logger.debug(header.get("userid"));
-			 
+			
+			 Object retobj= new Object();
 			 JsonParser jsonparser = new JsonParser();
-			 JsonElement jsontree = jsonparser.parse(profile);
-			 JsonObject obj = jsontree.getAsJsonObject();
+			 JsonObject obj = new JsonParser().parse(profile).getAsJsonObject();
+			
 			 UserDTO userdto = new UserDTO();
-			 userdto.setId(Integer.parseInt(header.get("userid").toString()));
+			 userdto.setUserguid(header.get("userid").toString());
 			 userdto.setUsername(obj.get("username").getAsString());
 			 userdto.setEmail(obj.get("email").getAsString());
-			// userdto.setLanguageid(Integer.parseInt(obj.get("languageid").getAsString()));
-			 String lang=obj.get("language").getAsString();
-			 String state=obj.get("state").getAsString();
-			 String country=obj.get("country").getAsString();
+			 userdto.setLanguageid(Integer.parseInt(obj.get("language").getAsString()));
+			 JsonArray jsonarray = obj.getAsJsonArray("address");
+			 logger.debug("jsonarr size--"+jsonarray.size());
+			ArrayList<Address> addrArray= new ArrayList<Address>();
+			if(jsonarray.size()!=0){
+			 for(int i=0;i<jsonarray.size();i++)
+			 {
 			 AddressDTO addrdto= new AddressDTO();
-			 addrdto.setAddresstype(obj.get("addresstype").getAsString());
-			 addrdto.setAddress1(obj.get("address").getAsString());
-			 addrdto.setCity(obj.get("city").getAsString());
-			// addrdto.setCountry(obj.get("country").getAsString());
-			 addrdto.setLandmark(obj.get("landmark").getAsString());
+			 logger.info("jsonarr size--"+jsonarray.size());
+			 logger.info(jsonarray.get(i).getAsJsonObject().get("address").getAsString());
+			 addrdto.setAddresstype(jsonarray.get(i).getAsJsonObject().get("addresstype").getAsString());
+			 addrdto.setAddress1(jsonarray.get(i).getAsJsonObject().get("address").getAsString());
+			 addrdto.setCity(jsonarray.get(i).getAsJsonObject().get("city").getAsString());
+			 addrdto.setCountryid(Integer.parseInt(jsonarray.get(i).getAsJsonObject().get("country").getAsString()));
+			 addrdto.setStateprovinceid(Integer.parseInt(jsonarray.get(i).getAsJsonObject().get("state").getAsString()));
+			 addrdto.setLandmark(jsonarray.get(i).getAsJsonObject().get("landmark").getAsString());
 			 addrdto.setCreatedonutc(new Timestamp(System.currentTimeMillis()));
+			 addrdto.setUserid(Integer.parseInt(header.get("userid").toString()));
+			 addrdto.setZippostalcode(jsonarray.get(i).getAsJsonObject().get("pincode").getAsString());
+			 userAddrservice.updateUserAddress(modelMapper.map(userdto, User.class), modelMapper.map(addrdto, Address.class),i);
+			 addrArray.add(modelMapper.map(addrdto, Address.class));
+			 }
 			 
-			// addrdto.setStateprovinceid(Integer.parseInt(obj.get("stateid").getAsString()));
-			 addrdto.setZippostalcode(obj.get("pincode").getAsString());
-			 userAddrservice.updateUserAddress(modelMapper.map(userdto, User.class), modelMapper.map(addrdto, Address.class),lang,state,country);
-			 return new ResponseTransfer(ResponseCodes.Code_2001,addrdto,null);
+			
+			 
+			}
+			else
+			{// if there are no addresses to be inserted
+				userAddrservice.updateUserAddress(modelMapper.map(userdto, User.class),null,-1);
+				addrArray=null;
+			}
+			
+			 // setting the return obj with user and address details
+			UserAddressDTO userAddrObj= new UserAddressDTO();
+			userAddrObj.setName(obj.get("username").getAsString());
+			userAddrObj.setEmailid(obj.get("email").getAsString());
+			userAddrObj.setLang(obj.get("language").getAsString());
+			userAddrObj.setMobno(userservice.getUserByguId(header.get("userid").toString()).getUsermobileno());
+			userAddrObj.setAddrList(addrArray);
+			retobj=userAddrObj;
+			
+				 return new ResponseTransfer(Constant.SUCCESS_USER_CODE,ResponseCodes.Code_2001,retobj,null);
 				
 			 
 		 }
@@ -262,7 +295,7 @@ public class UserController {
 			 logger.error("Exception::"+ex);
 			 HashMap<String,String> errdesc= new HashMap<String, String>();
 			 errdesc.put(Constant.TECHNICAL_ERROR_CODE, ResponseCodes.Code_5001);
-			 return new ResponseTransfer(ResponseCodes.Code_5001,null,errdesc); 
+			 return new ResponseTransfer(Constant.TECHNICAL_ERROR_CODE,ResponseCodes.Code_5001,null,errdesc); 
 	     }
 			
 	 }
@@ -270,8 +303,8 @@ public class UserController {
 	 
 	 
 	 
-	/* 
-	 @GetMapping("/getAllStores")
+	
+	  @GetMapping("/getAllStores")
 	 public ResponseEntity<List<Retailer>> getAllStores()
     {
 		//System.out.println("version::"+ResponseCodes.Code_2001);
@@ -286,27 +319,6 @@ public class UserController {
 		     
     }
 	
-	 @PostMapping("/register1")
-	 @Consumes("application/json")
-	 public ResponseEntity<String> registerUser1(@RequestBody String UserObj,@RequestHeader Map<String,String> headers)
-	     {
-		 List<String> str=(List<String>) headers.keySet();
-		 for(int i=0;i<str.size();i++)
-		 {
-		 System.out.println(str.get(i));
-		 }
-		 System.out.println("register present");
-		 String storeid="";
-		 if(retservice.getByStoreId(UserObj)!=null){
-			 System.out.println("Store present");
-		 }
-		 
-		 else{
-			 return new ResponseEntity<>("Failure", HttpStatus.NOT_FOUND);
-		 }
-		 
-		 return new ResponseEntity<>("Success", HttpStatus.OK);
-	     }
 	     
-*/
+
 }

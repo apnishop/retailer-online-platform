@@ -14,7 +14,7 @@ public class AddressDTO {
 	
 
 	private Timestamp createdonutc;
-	
+	private int userid;
 	
 	public Timestamp getCreatedonutc() {
 		return createdonutc;
@@ -64,6 +64,12 @@ public class AddressDTO {
 	}
 	public void setZippostalcode(String zippostalcode) {
 		this.zippostalcode = zippostalcode;
+	}
+	public int getUserid() {
+		return userid;
+	}
+	public void setUserid(int userid) {
+		this.userid = userid;
 	}
 		
 

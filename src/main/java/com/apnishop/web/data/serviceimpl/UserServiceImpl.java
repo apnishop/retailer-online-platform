@@ -65,9 +65,21 @@ public class UserServiceImpl implements UserService{
 	}
 
 	@Override
-	public void updateUserProfile(String name, String mail, int langid, int userid) {
+	public void updateUserProfile(String name, String mail, int langid, String userid) {
 		userDAO.updateUserProfile(name, mail, langid, userid);
 		
+	}
+
+	@Override
+	public String getMaxGUId() {
+		// TODO Auto-generated method stub
+		return userDAO.getMaxUserGUId();
+	}
+
+	@Override
+	public User getUserByguId(String guid) {
+		// TODO Auto-generated method stub
+		return userDAO.findByUserguid(guid);
 	}
 
 }
